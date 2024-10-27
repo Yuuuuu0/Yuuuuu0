@@ -47,7 +47,7 @@ if [[ -z "$ssh_port" ]]; then
 fi
 
 # 修改SSH端口
-sed -i "s/^#Port .*/Port $ssh_port/" /etc/ssh/sshd_config
+sed -i "/^#*Port /c\Port $ssh_port" /etc/ssh/sshd_config
 
 # 获取公钥输入
 read -p "请输入SSH公钥（留空则保留密码登录）： " ssh_pubkey
