@@ -36,6 +36,8 @@ echo -e "${GREEN}开始配置SSH...${NC}"
 if [ -d /etc/ssh/sshd_config.d/ ]; then
     rm -f /etc/ssh/sshd_config.d/*
     echo -e "${GREEN}/etc/ssh/sshd_config.d/ 目录中的文件已删除${NC}"
+else
+    echo -e "${GREEN}/etc/ssh/sshd_config.d/ 目录中的没有文件${NC}"
 fi
 
 # 获取自定义SSH端口号
