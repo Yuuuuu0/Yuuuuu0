@@ -44,6 +44,8 @@ fi
 read -p "请输入新的SSH端口号（留空则随机选择10000~65535）： " ssh_port
 if [[ -z "$ssh_port" ]]; then
     ssh_port=$((RANDOM % 55536 + 10000))
+else
+    echo -e "${GREEN}使用指定SSH端口号： $ssh_port${NC}"
 fi
 
 # 修改SSH端口
