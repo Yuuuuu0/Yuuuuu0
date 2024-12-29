@@ -75,5 +75,39 @@ fi
 systemctl restart ssh
 echo -e "${GREEN}SSH配置完成，新的端口号为 $ssh_port${NC}"
 
+# 6. 开启BBR加速
+echo -e "${GREEN}开启BBR加速...${NC}"
+echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+sysctl -p
+if lsmod | grep -q "bbr"; then
+    echo -e "${GREEN}BBR加速已启用！${NC}"
+else
+    echo -e "${RED}BBR加速启用失败，请检查系统支持情况。${NC}"
+fi
+
+# 7. 配置~/.bashrc
+echo -e "${GREEN}配置~/.bashrc...${NC}"
+cat <<EOF > ~/.bashrc
+# ~/.bashrc: executed by bash(1) for non-login shells.
+
+# Note: PS1 and umask are already set in /etc/profile. You should not
+# need this unless you want different defaults for root.
+# PS1='${debian_chroot:+(\$debian_chroot)}\h:\w\$ '
+# umask 022
+
+# You may uncomment the following lines if you want \`ls\` to be colorized:
+export LS_OPTIONS='--color=auto'
+eval "\$(dircolors)"
+alias ls='ls \$LS_OPTIONS'
+alias ll='ls \$LS_OPTIONS -lhF'
+alias l='ls \$LS_OPTIONS -lA'
+
+# Some more alias to avoid making mistakes:
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+EOF
+echo -e "${GREEN}~/.bashrc 配置完成！${NC}"
 
 echo -e "${GREEN}初始化脚本执行完成！${NC}"
