@@ -18,11 +18,11 @@ echo -e "${GREEN}开始设置时区...${NC}"
 timedatectl set-timezone Asia/Shanghai
 echo -e "${GREEN}时区设置为北京时间！${NC}"
 
-# 3. 安装vim，配置~/.vimrc
-echo -e "${GREEN}安装Vim并配置...${NC}"
-apt install -y vim
+# 3. 安装必要软件
+echo -e "${GREEN}安装必要软件（vim、wget、curl）并配置...${NC}"
+apt install -y vim wget curl
 echo "set nopaste" > ~/.vimrc
-echo -e "${GREEN}Vim安装完成并配置完成！${NC}"
+echo -e "${GREEN}必要软件安装完成，Vim 配置完成！${NC}"
 
 # 4. 安装vnstat
 echo -e "${GREEN}开始安装vnstat...${NC}"
