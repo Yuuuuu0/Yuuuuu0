@@ -125,4 +125,21 @@ else
     log_info "跳过Docker安装"
 fi
 
+# 添加是否设置Swap的选项
+log_info "是否需要设置Swap？输入大小（单位GB），默认不设置，3秒内未输入也不设置"
+read -t 3 -p "请输入Swap大小（单位GB）： " swap_size
+
+if [[ -n "$swap_size" && "$swap_size" =~ ^[0-9]+$ ]]; then
+    log_info "开始设置Swap，大小为 ${swap_size}G..."
+    swapfile="/swapfile"
+    dd if=/dev/zero of=$swapfile bs=1G count=$swap_size
+    chmod 600 $swapfile
+    mkswap $swapfile
+    swapon $swapfile
+    echo "$swapfile none swap sw 0 0" >> /etc/fstab
+    log_info "Swap设置完成，大小为 ${swap_size}G"
+else
+    log_info "跳过Swap设置"
+fi
+
 log_info "初始化脚本执行完成！"
