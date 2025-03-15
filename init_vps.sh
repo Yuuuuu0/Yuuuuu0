@@ -125,6 +125,54 @@ else
     log_info "跳过Docker安装"
 fi
 
+# 8. Fail2ban安装配置
+log_info "是否需要安装fail2ban（入侵防御系统）？输入 y/n（默认n）"
+read -t 3 -p "您的选择： " install_fail2ban
+if [[ "$install_fail2ban" == "y" || "$install_fail2ban" == "Y" ]]; then
+    log_info "开始安装fail2ban..."
+    apt install fail2ban -y
+    log_info "fail2ban安装完成！"
+
+    # 询问是否配置SSH规则
+    read -t 3 -p "是否配置fail2ban的SSH防护规则？输入 y/n（默认y）： " configure_ssh_jail
+    configure_ssh_jail=${configure_ssh_jail:-y}
+    if [[ "$configure_ssh_jail" == "y" || "$configure_ssh_jail" == "Y" ]]; then
+        log_info "配置fail2ban的SSH防护规则..."
+        
+        # 安装rsyslog日志系统
+        apt install rsyslog -y
+        systemctl restart rsyslog
+
+        # 获取SSH端口号（默认使用已配置的端口）
+        read -p "请输入需要防护的SSH端口（当前SSH端口为$ssh_port，回车默认）： " fail2ban_port
+        fail2ban_port=${fail2ban_port:-$ssh_port}
+
+        # 获取ban配置参数
+        read -p "请输入封禁时长（默认24h）： " ban_time
+        ban_time=${ban_time:-24h}
+
+        # 创建自定义配置文件
+        cat <<EOF > /etc/fail2ban/jail.local
+[sshd]
+enabled = true
+port = $fail2ban_port
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = $ban_time
+findtime = 600
+EOF
+
+        # 重启fail2ban服务
+        systemctl restart fail2ban
+        log_info "SSH防护规则已配置！端口：$fail2ban_port，封禁时长：$ban_time"
+    else
+        log_info "跳过fail2ban SSH规则配置"
+    fi
+else
+    log_info "跳过fail2ban安装"
+fi
+
 # 添加是否设置Swap的选项
 log_info "是否需要设置Swap？输入大小（单位GB），默认不设置，3秒内未输入也不设置"
 read -t 3 -p "请输入Swap大小（单位GB）： " swap_size
