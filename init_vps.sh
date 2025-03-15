@@ -138,10 +138,6 @@ if [[ "$install_fail2ban" == "y" || "$install_fail2ban" == "Y" ]]; then
     configure_ssh_jail=${configure_ssh_jail:-y}
     if [[ "$configure_ssh_jail" == "y" || "$configure_ssh_jail" == "Y" ]]; then
         log_info "配置fail2ban的SSH防护规则..."
-        
-        # 安装rsyslog日志系统
-        apt install rsyslog -y
-        systemctl restart rsyslog
 
         # 获取SSH端口号（默认使用已配置的端口）
         read -p "请输入需要防护的SSH端口（当前SSH端口为$ssh_port，回车默认）： " fail2ban_port
@@ -153,13 +149,21 @@ if [[ "$install_fail2ban" == "y" || "$install_fail2ban" == "Y" ]]; then
 
         # 创建自定义配置文件
         cat <<EOF > /etc/fail2ban/jail.local
-[sshd]
-enabled = true
-port = $fail2ban_port
-filter = sshd
-logpath = /var/log/auth.log
+[DEFAULT]
+ignoreip = 127.0.0.1/8
+bantime  = 86400
+findtime = 600
 maxretry = 3
-bantime = $ban_time
+allowipv6 = true
+
+[sshd]
+enabled  = true
+filter   = sshd
+action   = iptables[name=SSH, port=$fail2ban_port, protocol=tcp]
+logpath  = /var/log/journal/
+backend  = systemd
+maxretry = 3
+bantime  = $ban_time
 findtime = 600
 EOF
 
