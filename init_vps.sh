@@ -112,6 +112,10 @@ alias mv='mv -i'
 EOF
 log_info "~/.bashrc 配置完成！"
 
+# 设置日志最大空间
+sed -i 's/#SystemMaxUse=/SystemMaxUse=1G/' /etc/systemd/journald.conf && systemctl restart systemd-journald
+log_info "系统日志最大可用空间设置完成！当前：1G"
+
 # 7. Docker安装选项
 log_info "是否需要安装Docker？输入 y/n（默认n），3秒内未输入则默认不安装"
 read -t 3 -p "您的选择： " install_docker
