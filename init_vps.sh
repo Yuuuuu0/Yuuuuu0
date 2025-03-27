@@ -134,7 +134,7 @@ log_info "已设置日志自动清理，每7天清理一次 /etc/cron.d/cleanup_
 
 # 设置登录信息
 cat <<EOF > /etc/motd
-欢迎使用 Yu的VPS！
+欢迎使用 Yu の VPS！
 - SSH 端口: $ssh_port
 - BBR 状态: $(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
 - 服务器负载: $(uptime | awk -F'load average:' '{ print $2 }')
