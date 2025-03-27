@@ -133,9 +133,13 @@ echo "0 3 * * * root journalctl --vacuum-time=7d" > /etc/cron.d/cleanup_logs
 log_info "已设置日志自动清理，每7天清理一次 /etc/cron.d/cleanup_logs"
 
 # 设置登录信息
-log_info "配置登录欢迎信息 (MOTD)..."
+log_info "是否需要配置登录欢迎信息 (MOTD)？输入 y/n（默认n），3秒内未输入则默认不设置"
+read -t 3 -p "您的选择： " setup_motd
 
-cat <<'EOF' > /etc/update-motd.d/99-custom
+if [[ "$setup_motd" == "y" || "$setup_motd" == "Y" ]]; then
+    log_info "开始配置登录欢迎信息 (MOTD)..."
+
+    cat <<'EOF' > /etc/update-motd.d/99-custom
 #!/bin/bash
 echo "===================================================="
 echo "  欢迎使用Yuの VPS！"
@@ -147,13 +151,18 @@ echo "----------------------------------------------------"
 echo "主机名       : $(hostname)"
 echo "操作系统     : $(lsb_release -ds 2>/dev/null || cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2 | tr -d '"')"
 echo "内核版本     : $(uname -r)"
-echo "CPU 负载     : $(uptime | awk -F'load average:' '{ print $2 }')"
 
 echo ""
 echo "🌐 网络信息"
 echo "----------------------------------------------------"
 echo "SSH 端口     : $(grep -oP '^Port \K[0-9]+' /etc/ssh/sshd_config)"
-echo "公网 IP      : $(curl -s ifconfig.me || echo "获取失败")"
+
+# 获取公网 IPv4 和 IPv6
+ipv4=$(curl -4 -s ifconfig.me || echo "未检测到 IPv4")
+ipv6=$(curl -6 -s ifconfig.me || echo "未检测到 IPv6")
+
+echo "公网 IPv4    : $ipv4"
+echo "公网 IPv6    : $ipv6"
 echo "内网 IP      : $(hostname -I | awk '{print $1}')"
 
 echo ""
@@ -164,7 +173,7 @@ echo "内存使用     : $(free -h | awk '/^Mem:/ {print $3 " / " $2}')"
 echo "磁盘使用     : $(df -h / | awk 'NR==2 {print $3 " / " $2 " (" $5 ")"}')"
 
 echo ""
-echo "🛡 安全状态"
+echo "🛡  安全状态"
 echo "----------------------------------------------------"
 echo "BBR 加速     : $(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')"
 echo "Fail2Ban 状态: $(systemctl is-active fail2ban>/dev/null || echo "未安装")"
@@ -173,9 +182,12 @@ echo "防火墙状态   : $(ufw status | grep Status || echo "未安装")"
 echo "===================================================="
 EOF
 
-chmod +x /etc/update-motd.d/99-custom
-rm -f /etc/motd
-log_info "登录欢迎信息配置完成！"
+    chmod +x /etc/update-motd.d/99-custom
+    rm -f /etc/motd
+    log_info "登录欢迎信息配置完成！"
+else
+    log_info "跳过登录欢迎信息配置"
+fi
 
 # 7. Docker安装选项
 log_info "是否需要安装Docker？输入 y/n（默认n），3秒内未输入则默认不安装"
