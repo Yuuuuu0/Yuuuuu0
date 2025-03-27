@@ -56,21 +56,32 @@ fi
 sed -i "/^#*Port /c\Port $ssh_port" /etc/ssh/sshd_config
 
 # 获取公钥输入
-read -p "请输入SSH公钥（留空则保留密码登录）： " ssh_pubkey
+read -p "请输入SSH公钥（留空则下载默认公钥）： " ssh_pubkey
 
-# 如果输入了公钥，则写入authorized_keys并禁用密码登录
+# 如果输入为空，则下载默认公钥
+if [[ -z "$ssh_pubkey" ]]; then
+    log_info "未输入公钥，下载默认公钥..."
+    ssh_pubkey=$(curl -fsSL http://static.1024.do/key.pub)
+    if [[ -z "$ssh_pubkey" ]]; then
+        log_error "默认公钥下载失败，保留密码登录"
+    else
+        log_info "默认公钥下载成功，已添加到 ~/.ssh/authorized_keys"
+    fi
+fi
+
+# 如果获取到公钥，则写入 authorized_keys 并禁用密码登录
 if [[ -n "$ssh_pubkey" ]]; then
     mkdir -p ~/.ssh
     echo "$ssh_pubkey" >> ~/.ssh/authorized_keys
     chmod 600 ~/.ssh/authorized_keys
     chmod 700 ~/.ssh
-    log_info "公钥已添加到~/.ssh/authorized_keys"
+    log_info "公钥已添加到 ~/.ssh/authorized_keys"
 
     sed -i "s/^#PasswordAuthentication .*/PasswordAuthentication no/" /etc/ssh/sshd_config
     sed -i "s/^#PubkeyAuthentication .*/PubkeyAuthentication yes/" /etc/ssh/sshd_config
     log_info "已禁用密码登录并开启密钥认证"
 else
-    log_error "未输入公钥，保留密码登录"
+    log_error "未成功添加公钥，保留密码登录"
 fi
 
 # 重启SSH服务
@@ -79,8 +90,11 @@ log_info "SSH配置完成，新的端口号为 $ssh_port"
 
 # 5. 开启BBR加速
 log_info "开启BBR加速..."
-echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
-echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+sysctl_conf="/etc/sysctl.conf"
+sed -i '/net.core.default_qdisc/d' $sysctl_conf
+sed -i '/net.ipv4.tcp_congestion_control/d' $sysctl_conf
+echo "net.core.default_qdisc=fq" >> $sysctl_conf
+echo "net.ipv4.tcp_congestion_control=bbr" >> $sysctl_conf
 sysctl -p
 if lsmod | grep -q "bbr"; then
     log_info "BBR加速已启用！"
@@ -115,6 +129,17 @@ log_info "~/.bashrc 配置完成！"
 # 设置日志最大空间
 sed -i 's/#SystemMaxUse=/SystemMaxUse=1G/' /etc/systemd/journald.conf && systemctl restart systemd-journald
 log_info "系统日志最大可用空间设置完成！当前：1G"
+echo "0 3 * * * root journalctl --vacuum-time=7d" > /etc/cron.d/cleanup_logs
+log_info "已设置日志自动清理，每7天清理一次 /etc/cron.d/cleanup_logs"
+
+# 设置登录信息
+cat <<EOF > /etc/motd
+欢迎使用 Yu的VPS！
+- SSH 端口: $ssh_port
+- BBR 状态: $(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
+- 服务器负载: $(uptime | awk -F'load average:' '{ print $2 }')
+EOF
+log_info "已设置登录欢迎信息"
 
 # 7. Docker安装选项
 log_info "是否需要安装Docker？输入 y/n（默认n），3秒内未输入则默认不安装"
