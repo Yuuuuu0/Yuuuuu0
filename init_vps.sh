@@ -133,13 +133,49 @@ echo "0 3 * * * root journalctl --vacuum-time=7d" > /etc/cron.d/cleanup_logs
 log_info "已设置日志自动清理，每7天清理一次 /etc/cron.d/cleanup_logs"
 
 # 设置登录信息
-cat <<EOF > /etc/motd
-欢迎使用 Yu の VPS！
-- SSH 端口: $ssh_port
-- BBR 状态: $(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
-- 服务器负载: $(uptime | awk -F'load average:' '{ print $2 }')
+log_info "配置登录欢迎信息 (MOTD)..."
+
+cat <<'EOF' > /etc/update-motd.d/99-custom
+#!/bin/bash
+echo "===================================================="
+echo "  欢迎使用Yuの VPS！"
+echo "  $(date "+%Y-%m-%d %H:%M:%S") 服务器时间"
+echo "===================================================="
+
+echo "💻 系统信息"
+echo "----------------------------------------------------"
+echo "主机名       : $(hostname)"
+echo "操作系统     : $(lsb_release -ds 2>/dev/null || cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2 | tr -d '"')"
+echo "内核版本     : $(uname -r)"
+echo "CPU 负载     : $(uptime | awk -F'load average:' '{ print $2 }')"
+
+echo ""
+echo "🌐 网络信息"
+echo "----------------------------------------------------"
+echo "SSH 端口     : $(grep -oP '^Port \K[0-9]+' /etc/ssh/sshd_config)"
+echo "公网 IP      : $(curl -s ifconfig.me || echo "获取失败")"
+echo "内网 IP      : $(hostname -I | awk '{print $1}')"
+
+echo ""
+echo "📊 资源使用情况"
+echo "----------------------------------------------------"
+echo "CPU 使用率   : $(top -bn1 | grep "Cpu(s)" | awk '{print 100 - $8"%"}')"
+echo "内存使用     : $(free -h | awk '/^Mem:/ {print $3 " / " $2}')"
+echo "磁盘使用     : $(df -h / | awk 'NR==2 {print $3 " / " $2 " (" $5 ")"}')"
+
+echo ""
+echo "🛡 安全状态"
+echo "----------------------------------------------------"
+echo "BBR 加速     : $(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')"
+echo "Fail2Ban 状态: $(systemctl is-active fail2ban>/dev/null || echo "未安装")"
+echo "防火墙状态   : $(ufw status | grep Status || echo "未安装")"
+
+echo "===================================================="
 EOF
-log_info "已设置登录欢迎信息"
+
+chmod +x /etc/update-motd.d/99-custom
+rm -f /etc/motd
+log_info "登录欢迎信息配置完成！"
 
 # 7. Docker安装选项
 log_info "是否需要安装Docker？输入 y/n（默认n），3秒内未输入则默认不安装"
