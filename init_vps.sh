@@ -261,11 +261,15 @@ read -t 3 -p "请输入Swap大小（单位GB）： " swap_size
 if [[ -n "$swap_size" && "$swap_size" =~ ^[0-9]+$ ]]; then
     log_info "开始设置Swap，大小为 ${swap_size}G..."
     swapfile="/swapfile"
-    dd if=/dev/zero of=$swapfile bs=1G count=$swap_size
+    # 用1M block，避免内存溢出
+    dd if=/dev/zero of=$swapfile bs=1M count=$((swap_size * 1024)) status=progress
     chmod 600 $swapfile
     mkswap $swapfile
     swapon $swapfile
-    echo "$swapfile none swap sw 0 0" >> /etc/fstab
+    # 确保不会重复写入 fstab
+    if ! grep -q "$swapfile" /etc/fstab; then
+        echo "$swapfile none swap sw 0 0" >> /etc/fstab
+    fi
     log_info "Swap设置完成，大小为 ${swap_size}G"
 else
     log_info "跳过Swap设置"
