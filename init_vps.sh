@@ -133,8 +133,8 @@ echo "0 3 * * * root journalctl --vacuum-time=7d" > /etc/cron.d/cleanup_logs
 log_info "已设置日志自动清理，每7天清理一次 /etc/cron.d/cleanup_logs"
 
 # 设置登录信息
-log_info "是否需要配置登录欢迎信息 (MOTD)？输入 y/n（默认n），3秒内未输入则默认不设置"
-read -t 3 -p "您的选择： " setup_motd
+log_info "是否需要配置登录欢迎信息 (MOTD)？输入 y/n（默认n），10秒内未输入则默认不设置"
+read -t 10 -p "您的选择： " setup_motd
 
 if [[ "$setup_motd" == "y" || "$setup_motd" == "Y" ]]; then
     log_info "开始配置登录欢迎信息 (MOTD)..."
@@ -190,8 +190,8 @@ else
 fi
 
 # 7. Docker安装选项
-log_info "是否需要安装Docker？输入 y/n（默认n），3秒内未输入则默认不安装"
-read -t 3 -p "您的选择： " install_docker
+log_info "是否需要安装Docker？输入 y/n（默认n），10秒内未输入则默认不安装"
+read -t 10 -p "您的选择： " install_docker
 
 if [[ "$install_docker" == "y" || "$install_docker" == "Y" ]]; then
     log_info "开始安装Docker..."
@@ -255,8 +255,8 @@ else
 fi
 
 # 添加是否设置Swap的选项
-log_info "是否需要设置Swap？输入大小（单位GB），默认不设置，3秒内未输入也不设置"
-read -t 3 -p "请输入Swap大小（单位GB）： " swap_size
+log_info "是否需要设置Swap？输入大小（单位GB），默认不设置，10秒内未输入也不设置"
+read -t 10 -p "请输入Swap大小（单位GB）： " swap_size
 
 if [[ -n "$swap_size" && "$swap_size" =~ ^[0-9]+$ ]]; then
     log_info "开始设置Swap，大小为 ${swap_size}G..."
