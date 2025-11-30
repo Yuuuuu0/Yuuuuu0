@@ -30,7 +30,6 @@ log_info "时区设置为北京时间！"
 log_info "安装必要软件（vim、wget、curl、vnstat）并配置..."
 apt install -y vim wget curl vnstat
 cat > ~/.vimrc <<EOF
-set number
 set nopaste
 EOF
 log_info "必要软件安装完成，Vim 配置完成！"
