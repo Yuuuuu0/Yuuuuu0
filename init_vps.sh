@@ -233,6 +233,13 @@ log_warn "请确保您可以使用新端口和密钥连接，否则可能无法�
 # ============================================
 log_info "开启BBR加速..."
 sysctl_conf="/etc/sysctl.conf"
+
+# 检查文件是否存在，如果不存在则创建它
+if [[ ! -f "$sysctl_conf" ]]; then
+    log_warn "配置文件 $sysctl_conf 不存在，正在创建..."
+    touch "$sysctl_conf" || error_exit "创建 $sysctl_conf 失败"
+fi
+
 backup_file "$sysctl_conf"
 
 sed -i '/net.core.default_qdisc/d' "$sysctl_conf"
