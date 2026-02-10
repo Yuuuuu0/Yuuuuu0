@@ -271,6 +271,15 @@ cat <<'EOF' > ~/.bashrc
 # PS1='${debian_chroot:+($debian_chroot)}\h:\w\$ '
 # umask 022
 
+# Fix backspace key (Ctrl+H / DEL mismatch)
+if [ -t 0 ] && [ -n "${PS1:-}" ]; then
+  case "$(stty -a 2>/dev/null)" in
+    *"erase = ^?"*) stty erase '^H' 2>/dev/null || true ;;
+    *"erase = ^H"*) stty erase '^?' 2>/dev/null || true ;;
+    *) stty erase '^H' 2>/dev/null || true ;;
+  esac
+fi
+
 # You may uncomment the following lines if you want `ls` to be colorized:
 export LS_OPTIONS='--color=auto'
 eval "$(dircolors)"
@@ -282,6 +291,9 @@ alias l='ls $LS_OPTIONS -lA'
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
+
+# 
+stty erase '^H'
 EOF
 log_info "~/.bashrc 配置完成！"
 
